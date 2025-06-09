@@ -9,6 +9,30 @@ A FastAPI application for transcribing videos using OpenAI's Whisper model.
 - Stores transcripts in ChromaDB with vector embeddings
 - OpenAPI documentation available at `/docs`
 
+## Environemt Variables
+
+Set the `APP_ENV` environment variable and corresponding `.env` file:
+
+```bash
+export APP_ENV=development
+```
+
+```python
+ENVIRONMENTS = {
+    "development": ".env.dev",
+    "test": ".env.test",
+    "production": ".env.prod",
+}
+```
+### Default Settings
+
+```bash
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:1b-instruct-q2_K
+UPLOADS_PATH=uploads
+CHROMA_DB_PATH=chroma_db
+```
+
 ## Installation
 
 1. Clone this repository
@@ -63,6 +87,17 @@ python -m unittest
 ```
 
 # Docker Dev Env
+
+## Running the server
+
+**Persist Model Files**: Use `--mount type=bind,src/mnt/llm_models,dst=/app/llm_models` when running docker to avoid redownloading models
+
+This command builds a docker image with the code of this repository and runs FastAPI server
+
+```sh
+./build_docker.sh my_app
+docker run -p 8000:8000 my_app ./run_tests.sh
+```
 
 ## Running tests
 

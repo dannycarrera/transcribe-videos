@@ -1,11 +1,12 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.openapi.utils import get_openapi
-import os
-from pathlib import Path
 import logging
 
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
+from llama_cpp import Llama
+
+from app.config import config
 from app.routers import transcription
 
 # Configure logging
@@ -16,8 +17,16 @@ logging.basicConfig(
 logger = logging.getLogger("transcription-api")
 
 # Create uploads directory if it doesn't exist
-uploads_dir = Path("uploads")
+uploads_dir = config.uploads_path
 uploads_dir.mkdir(exist_ok=True)
+
+# Download LLM Models from HuggingFace
+llm = Llama.from_pretrained(
+    local_dir=config.llama_models_dir,  
+    repo_id=config.hf_repo_id,
+    filename=f"{config.hf_model_filename}",
+    verbose=False
+)
 
 # Create the FastAPI app
 app = FastAPI(
@@ -80,7 +89,6 @@ def custom_openapi():
     )
     
     # Custom OpenAPI configurations can be added here
-    
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

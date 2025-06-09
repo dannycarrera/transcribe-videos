@@ -1,34 +1,29 @@
-# Stage 1: pull the model using Ollama's official image
-FROM ollama/ollama:latest AS builder
+# Stage 1: Build stage to build Llama.cpp
+FROM python:3.12.7-slim-bookworm as builder
 
-# Accept build argument
-ARG OLLAMA_MODEL
-ENV OLLAMA_MODEL=${OLLAMA_MODEL}
-
-# Start Ollama, wait, then pull the model from env variable
-RUN ollama serve & \
-    sleep 3 && \
-    ollama pull ${OLLAMA_MODEL} && \
-    sleep 2
-
-# Stage 2: create the app image
-FROM python:3.12.7-slim-bookworm
-
-# Install dependencies for Ollama runtime and ffmpeg for audio extraction
+# Install build dependencies for Llama.cpp and ffmpeg for audio extraction
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    fuse ca-certificates curl gnupg libssl-dev libstdc++6 libfuse2 \
-    ffmpeg \
+    g++ \
+    gcc \
+    git \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy Ollama binary and model data
-COPY --from=builder /usr/bin/ollama /usr/bin/ollama
-COPY --from=builder /root/.ollama /root/.ollama
-
-WORKDIR /app
 
 # Install python requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Stage 2: Runtime stage
+FROM python:3.12.7-slim-bookworm
+
+# Install ffmpeg for audio extraction
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy Python requirements
+COPY --from=builder /root/.local /root/.local
 
 # Copy the app
 COPY . .

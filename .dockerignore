@@ -2,5 +2,6 @@
 !**/*.py
 !requirements.txt
 !run_tests.sh
+!run_server.sh
 !app/tests/videos/
 !.env.template

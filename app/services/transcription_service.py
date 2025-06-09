@@ -5,7 +5,7 @@ import whisper
 from pathlib import Path
 from chromadb import ClientAPI
 import uuid
-from langchain_ollama import OllamaEmbeddings
+from llama_cpp import Llama
 import tempfile
 import shutil
 from app.schemas.transcription import ModelSize
@@ -26,8 +26,12 @@ class TranscriptionService:
         )
 
         # Initialize embedding model from config
-        self.embedding_model = OllamaEmbeddings(
-            base_url=config.ollama_url.unicode_string(), model=config.ollama_model
+        self.embedding_model = Llama(
+            model_path=os.path.join(config.llama_models_dir, config.hf_model_filename),
+            n_gpu_layers=config.llama_n_gpu_layers,
+            n_ctx=config.llama_context_size,
+            embedding=True,  # Enable embedding mode
+            verbose=False
         )
 
         # Cache for loaded models
@@ -67,7 +71,7 @@ class TranscriptionService:
         """Save transcript to ChromaDB with LLaMA embeddings and video path metadata."""
         try:
             # Generate embedding for the transcript
-            embedding = self.embedding_model.embed_query(transcript)
+            embedding = self.embedding_model.create_embedding(transcript)["data"][0]["embedding"][0]
 
             # Store in ChromaDB with video_path as metadata
             self.collection.upsert(
